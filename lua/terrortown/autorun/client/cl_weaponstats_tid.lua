@@ -1,6 +1,5 @@
 local mat_tid_dmg = Material("vgui/ttt/dynamic/roles/icon_traitor")
 local mat_tid_acc = Material("vgui/ttt/tid/tid_accuracy")
-local mat_tid_ammo = Material("vgui/ttt/tid/tid_ammo")
 local mat_tid_bullet = Material("vgui/ttt/pickup/icon_ammo.png")
 local mat_tid_auto = Material("vgui/ttt/tid/tid_automatic")
 local mat_tid_rec = Material("vgui/ttt/tid/tid_recoil")
@@ -85,8 +84,8 @@ hook.Add("TTTRenderEntityInfo", "HUDDrawTargetIDWeaponStats", function(tData)
 	local client = LocalPlayer()
 	local ent = tData:GetEntity()
 
-	if not IsValid(client) or not client:IsTerror() or not client:Alive()
-	or not IsValid(ent) or tData:GetEntityDistance() > 100 or not ent:IsWeapon() then
+	if not IsValid(client) or not IsValid(ent) or tData:GetEntityDistance() > 100
+	or not ent:IsWeapon() then
 		return
 	end
 
@@ -103,6 +102,13 @@ hook.Add("TTTRenderEntityInfo", "HUDDrawTargetIDWeaponStats", function(tData)
 	if clip1 == -1 then return end
 
 	ammomax = (ent.Primary.ClipMax == -1) and LANG.TryTranslation("ttt2_wstat_no_ammo") or ent.Primary.ClipMax
+
+	if client:IsSpec() then
+		tData:EnableText()
+		tData:EnableOutline()
+		tData:SetOutlineColor(COLOR_SPEC)
+		tData:SetTitle(LANG.TryTranslation(ent:GetPrintName()))
+	end
 
 	-- add an empty line if there's already data in the description area
 	if tData:GetAmountDescriptionLines() > 0 then
@@ -176,18 +182,40 @@ hook.Add("TTTRenderEntityInfo", "HUDDrawTargetIDAmmoBoxes", function(tData)
 	local client = LocalPlayer()
 	local ent = tData:GetEntity()
 
-	if not IsValid(client) or not client:IsTerror() or not client:Alive()
-	or not IsValid(ent) or tData:GetEntityDistance() > 100 or not ammo_types[ent:GetClass()] then
+	if not IsValid(client) or not IsValid(ent) or tData:GetEntityDistance() > 100
+	or not ammo_types[ent:GetClass()] then
 		return
 	end
 
 	-- enable targetID rendering
 	tData:EnableText()
 	tData:EnableOutline()
-	tData:SetOutlineColor(client:GetRoleColor())
 
 	local ammo_type = string.lower(ent.AmmoType)
+
+	if not client:IsSpec() then
+		tData:SetOutlineColor(client:GetRoleColor())
+		tData:SetSubtitle(LANG.TryTranslation("ttt2_wstat_ammo_walk_over"))
+		tData:AddIcon(BaseHUD.AmmoIcons[ammo_type] or mat_tid_large_ammo)
+	else
+		tData:SetOutlineColor(COLOR_SPEC)
+	end
+
 	tData:SetTitle(LANG.TryTranslation("ammo_" .. ammo_type))
-	tData:SetSubtitle(LANG.TryTranslation("ttt2_wstat_ammo_walk_over"))
-	tData:AddIcon(BaseHUD.AmmoIcons[ammo_type] or mat_tid_large_ammo)
+end)
+
+hook.Add("TTTRenderEntityInfo", "HUDDrawTargetIDGrenadesForSpectators", function(tData)
+	local client = LocalPlayer()
+	local ent = tData:GetEntity()
+
+	if not IsValid(client) or not IsValid(ent) or not ent.IsGrenade
+	or tData:GetEntityDistance() > 100 or not client:IsSpec() then
+		return
+	end
+
+	-- enable targetID rendering
+	tData:EnableText()
+	tData:EnableOutline()
+	tData:SetOutlineColor(COLOR_SPEC)
+	tData:SetTitle(LANG.TryTranslation(ent:GetPrintName()))
 end)
